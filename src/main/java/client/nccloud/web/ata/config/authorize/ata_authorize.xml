@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<authorizes>
+    <authorize>
+        <appcode>*</appcode>
+        <actions>
+            <!-- 展品清单模块 -->
+            <action>ata.exhibitlist.save</action>
+            <action>ata.exhibitlist.delete</action>
+            <action>ata.exhibitlist.commit</action>
+            <action>ata.exhibitlist.uncommit</action>
+            <action>ata.exhibitlist.query</action>
+            <action>ata.exhibitlist.querycard</action>
+
+            <!-- 单据模块 -->
+            <action>ata.document.save</action>
+            <action>ata.document.audit</action>
+            <action>ata.document.unaudit</action>
+            <action>ata.document.remindextend</action>
+            <action>ata.document.query</action>
+            <action>ata.document.queryexpiring</action>
+
+            <!-- 出库模块 -->
+            <action>ata.shipment.save</action>
+            <action>ata.shipment.register</action>
+            <action>ata.shipment.cancelregister</action>
+            <action>ata.shipment.query</action>
+            <action>ata.shipment.querybylist</action>
+
+            <!-- 归还模块 -->
+            <action>ata.return.save</action>
+            <action>ata.return.register</action>
+            <action>ata.return.cancelregister</action>
+            <action>ata.return.query</action>
+            <action>ata.return.querybylist</action>
+
+            <!-- 差异模块 -->
+            <action>ata.diff.save</action>
+            <action>ata.diff.process</action>
+            <action>ata.diff.close</action>
+            <action>ata.diff.query</action>
+            <action>ata.diff.querybystatus</action>
+            <action>ata.diff.querybylist</action>
+        </actions>
+    </authorize>
+</authorizes>

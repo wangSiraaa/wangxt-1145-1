@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.yonyoufintech.product</groupId>
+    <artifactId>fbip-ata</artifactId>
+    <version>${revision}</version>
+    <packaging>jar</packaging>
+
+    <name>fbip-ata - 跨境展会ATA单证办理</name>
+
+    <properties>
+        <revision>8.3.0-jdk8-dev</revision>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.yonyoufintech.hotwebs.fbip</groupId>
+            <artifactId>pubplatform_baseLevel-1</artifactId>
+            <version>8.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.yonyoufintech.modulelibs</groupId>
+            <artifactId>baseapp-public-lib</artifactId>
+            <version>8.1</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <sourceDirectory>src/main/java/client</sourceDirectory>
+        <resources>
+            <resource>
+                <directory>src/main/java/client</directory>
+                <includes>
+                    <include>**/*.xml</include>
+                    <include>**/*.properties</include>
+                </includes>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>src/main/java/private</source>
+                                <source>src/main/java/public</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <revision>8.3.0-jdk8-dev</revision>
+            </properties>
+        </profile>
+        <profile>
+            <id>test</id>
+            <properties>
+                <revision>8.3.0-jdk8-test</revision>
+            </properties>
+        </profile>
+        <profile>
+            <id>release</id>
+            <properties>
+                <revision>8.3.0-jdk8-RELEASE</revision>
+            </properties>
+        </profile>
+    </profiles>
+</project>
