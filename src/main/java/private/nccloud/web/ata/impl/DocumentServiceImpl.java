@@ -214,13 +214,13 @@ public class DocumentServiceImpl implements IDocumentService {
     }
 
     @Override
-    public AggDocumentVO remindExtend(String pkExhibitList) throws BusinessException {
-        if (pkExhibitList == null || pkExhibitList.trim().length() == 0) {
-            throw new BusinessException("清单主键不能为空");
+    public AggDocumentVO remindExtend(String pkDocument) throws BusinessException {
+        if (pkDocument == null || pkDocument.trim().length() == 0) {
+            throw new BusinessException("单证主键不能为空");
         }
-        DocumentVO doc = queryByExhibitListInternal(pkExhibitList);
+        DocumentVO doc = queryHeadByPk(pkDocument);
         if (doc == null) {
-            throw new BusinessException("清单对应的单证不存在");
+            throw new BusinessException("单证不存在");
         }
         UFDate validTo = doc.getValid_to();
         UFDate today = new UFDate();
@@ -265,6 +265,129 @@ public class DocumentServiceImpl implements IDocumentService {
             return result;
         } catch (Exception e) {
             throw new BusinessException("查询即将到期单证失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<DocumentVO> getExpiringDetails() throws BusinessException {
+        UFDate today = new UFDate();
+        UFDate limitDate = UFDate.valueOf(today.getYear(), today.getMonth(), today.getDay());
+        limitDate = limitDate.addDay(30);
+        String sql = "SELECT * FROM ata_document WHERE dr = 0 AND doc_status != 3 AND valid_to IS NOT NULL AND valid_to <= ? ORDER BY valid_to ASC";
+        SQLParameter param = new SQLParameter();
+        param.addParam(limitDate.toDate());
+        try {
+            List list = getDao().executeQuery(sql, param, new BeanListProcessor(DocumentVO.class));
+            if (list == null) {
+                return new ArrayList<DocumentVO>();
+            }
+            return list;
+        } catch (Exception e) {
+            throw new BusinessException("查询即将到期单证失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<AggDocumentVO> queryByCondition(Map<String, Object> params) throws BusinessException {
+        StringBuilder sql = new StringBuilder("SELECT * FROM ata_document WHERE dr = 0 ");
+        SQLParameter sqlParam = new SQLParameter();
+        int idx = 0;
+        if (params != null) {
+            if (params.get("pk_org") != null && !((String) params.get("pk_org")).isEmpty()) {
+                sql.append(" AND pk_org = ? ");
+                sqlParam.addParam(idx++, params.get("pk_org"));
+            }
+            if (params.get("doc_status") != null && !"all".equals(String.valueOf(params.get("doc_status")))) {
+                sql.append(" AND doc_status = ? ");
+                try {
+                    sqlParam.addParam(idx++, Integer.valueOf(String.valueOf(params.get("doc_status"))));
+                } catch (Exception e) {
+                    sqlParam.addParam(idx++, params.get("doc_status"));
+                }
+            }
+            if (params.get("pk_exhibit_list") != null && !((String) params.get("pk_exhibit_list")).isEmpty()) {
+                sql.append(" AND pk_exhibit_list = ? ");
+                sqlParam.addParam(idx++, params.get("pk_exhibit_list"));
+            }
+            if (params.get("document_no") != null && !((String) params.get("document_no")).isEmpty()) {
+                sql.append(" AND document_no LIKE ? ");
+                sqlParam.addParam(idx++, "%" + params.get("document_no") + "%");
+            }
+            if (params.get("list_status") != null) {
+                sql.append(" AND pk_exhibit_list IN (SELECT pk_exhibit_list FROM ata_exhibit_list WHERE dr = 0 AND list_status = ?) ");
+                try {
+                    sqlParam.addParam(idx++, Integer.valueOf(String.valueOf(params.get("list_status"))));
+                } catch (Exception e) {
+                    sqlParam.addParam(idx++, params.get("list_status"));
+                }
+            }
+        }
+        sql.append(" ORDER BY creationtime DESC ");
+        try {
+            List list = getDao().executeQuery(sql.toString(), sqlParam, new BeanListProcessor(DocumentVO.class));
+            List<AggDocumentVO> result = new ArrayList<AggDocumentVO>();
+            if (list != null && !list.isEmpty()) {
+                for (Object obj : list) {
+                    DocumentVO vo = (DocumentVO) obj;
+                    AggDocumentVO agg = new AggDocumentVO();
+                    agg.setParentVO(vo);
+                    result.add(agg);
+                }
+            }
+            return result;
+        } catch (Exception e) {
+            throw new BusinessException("按条件查询单证失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<AggDocumentVO> queryByPks(String[] pks) throws BusinessException {
+        if (pks == null || pks.length == 0) {
+            return new ArrayList<AggDocumentVO>();
+        }
+        StringBuilder sql = new StringBuilder("SELECT * FROM ata_document WHERE dr = 0 AND pk_document IN (");
+        SQLParameter sqlParam = new SQLParameter();
+        for (int i = 0; i < pks.length; i++) {
+            if (i > 0) {
+                sql.append(",");
+            }
+            sql.append("?");
+            sqlParam.addParam(i, pks[i]);
+        }
+        sql.append(") ORDER BY creationtime DESC ");
+        try {
+            List list = getDao().executeQuery(sql.toString(), sqlParam, new BeanListProcessor(DocumentVO.class));
+            List<AggDocumentVO> result = new ArrayList<AggDocumentVO>();
+            if (list != null && !list.isEmpty()) {
+                for (Object obj : list) {
+                    DocumentVO vo = (DocumentVO) obj;
+                    AggDocumentVO agg = new AggDocumentVO();
+                    agg.setParentVO(vo);
+                    result.add(agg);
+                }
+            }
+            return result;
+        } catch (Exception e) {
+            throw new BusinessException("按主键批量查询单证失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    public void deleteByPks(String[] pks) throws BusinessException {
+        if (pks == null || pks.length == 0) {
+            return;
+        }
+        for (String pk : pks) {
+            DocumentVO vo = queryHeadByPk(pk);
+            if (vo != null) {
+                vo.setDr(1);
+                fillSysFields(vo, false);
+                try {
+                    getDao().updateVO(vo);
+                } catch (Exception e) {
+                    throw new BusinessException("删除单证失败：" + e.getMessage());
+                }
+            }
         }
     }
 

@@ -245,6 +245,7 @@ class DocumentList extends Component {
         this.props.pushTo('/card', {
             status: 'edit',
             id: id,
+            pk_document: id,
             pagecode: cardPageCode
         });
     }

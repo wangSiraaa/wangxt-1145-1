@@ -23,7 +23,7 @@ class DocumentCard extends Component {
             json: {}
         };
         this.status = props.getUrlParam('status') || 'browse';
-        this.pk_document = props.getUrlParam('id') || '';
+        this.pk_document = props.getUrlParam('pk_document') || props.getUrlParam('id') || '';
     }
 
     componentDidMount() {
@@ -174,6 +174,7 @@ class DocumentCard extends Component {
             url: '/nccloud/ata/exhibitlist/querycard.do',
             data: {
                 id: pkExhibitList,
+                pk_exhibit_list: pkExhibitList,
                 pagecode: '202606ATADOCCARD'
             },
             success: (res) => {
@@ -194,6 +195,7 @@ class DocumentCard extends Component {
         ajax({
             url: '/nccloud/ata/document/query.do',
             data: {
+                pk_document: this.pk_document,
                 id: this.pk_document,
                 pagecode: cardPageCode
             },
@@ -252,13 +254,14 @@ class DocumentCard extends Component {
         this.props.form.EmptyAllFormValue(formId);
         this.props.cardTable.setTableData(cardTableId, { rows: [] });
         this.setState({ exhibitList: [], remainDays: 0 });
+        this.pk_document = '';
         this.initButtonStatus('add');
-        this.props.setUrlParam({ status: 'add', id: '' });
+        this.props.setUrlParam({ status: 'add', id: '', pk_document: '' });
     }
 
     edit = () => {
         this.initButtonStatus('edit');
-        this.props.setUrlParam({ status: 'edit', id: this.pk_document });
+        this.props.setUrlParam({ status: 'edit', id: this.pk_document, pk_document: this.pk_document });
     }
 
     delete = () => {
@@ -310,7 +313,7 @@ class DocumentCard extends Component {
                     if (id) {
                         this.pk_document = id;
                         this.setState({ billId: id });
-                        this.props.setUrlParam({ status: 'browse', id: id });
+                        this.props.setUrlParam({ status: 'browse', id: id, pk_document: id });
                         this.initButtonStatus('browse');
                         if (isSaveAdd) {
                             this.add();
@@ -327,7 +330,7 @@ class DocumentCard extends Component {
         if (this.status === 'add') {
             this.back();
         } else {
-            this.props.setUrlParam({ status: 'browse', id: this.pk_document });
+            this.props.setUrlParam({ status: 'browse', id: this.pk_document, pk_document: this.pk_document });
             this.getData();
         }
     }
