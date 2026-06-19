@@ -214,9 +214,39 @@ public class ExhibitListServiceImpl implements IExhibitListService {
         if (exhibits == null || exhibits.length == 0) {
             throw new BusinessException("清单项下无展品，不能申报");
         }
+        Set<String> serialSet = new HashSet<String>();
+        StringBuilder controlledMsg = new StringBuilder();
+        int controlledCount = 0;
         for (ExhibitVO ex : exhibits) {
             if (ex.getSerial_no() == null || ex.getSerial_no().trim().length() == 0) {
                 throw new BusinessException("展品[" + ex.getExhibit_name() + "]序列号缺失，不能申报");
+            }
+            String serial = ex.getSerial_no().trim();
+            if (serialSet.contains(serial)) {
+                throw new BusinessException("序列号[" + serial + "]在清单内重复，请检查");
+            }
+            serialSet.add(serial);
+            if (ex.getValue() == null || ex.getValue().doubleValue() <= 0) {
+                throw new BusinessException("展品[" + ex.getExhibit_name() + "]估值不能为空或小于等于0");
+            }
+            boolean isControlled = checkControlledByHsCode(ex.getHs_code());
+            ex.setIs_controlled(isControlled ? 1 : 0);
+            if (isControlled) {
+                ex.setControl_level("一般管制");
+                controlledCount++;
+                controlledMsg.append("[").append(ex.getExhibit_name()).append("]");
+            }
+            if (ex.getShipped_qty() == null) {
+                ex.setShipped_qty(new UFDouble(0));
+            }
+            if (ex.getValue_verified() == null) {
+                ex.setValue_verified(0);
+            }
+            fillSysFieldsForChild(ex, false, ExhibitVO.PK_EXHIBIT_LIST, parent.getPk_exhibit_list());
+            try {
+                getDao().updateVO(ex);
+            } catch (Exception e) {
+                throw new BusinessException("更新展品信息失败：" + e.getMessage());
             }
         }
         if (parent.getTs() == null || !parent.getTs().equals(dbHead.getTs())) {
@@ -327,5 +357,28 @@ public class ExhibitListServiceImpl implements IExhibitListService {
         } catch (Exception e) {
             throw new BusinessException("查询失败：" + e.getMessage());
         }
+    }
+
+    private boolean checkControlledByHsCode(String hsCode) {
+        if (hsCode == null || hsCode.trim().length() == 0) {
+            return false;
+        }
+        String code = hsCode.trim().replaceAll("\\.", "");
+        if (code.length() < 4) {
+            return false;
+        }
+        String[] controlledPrefixes = {
+            "93", "36", "2933", "2934", "30", "0508",
+            "0509", "0510", "4403", "4406", "4407",
+            "7103", "7104", "7105", "71", "2716",
+            "2844", "2845", "9018", "9019", "9020",
+            "9021", "9022", "8541", "8542"
+        };
+        for (String prefix : controlledPrefixes) {
+            if (code.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -63,6 +63,16 @@
         <label>查询即将到期单据</label>
         <clazz>nccloud.web.ata.action.DocumentQueryExpiringAction</clazz>
     </action>
+    <action>
+        <name>ata.document.extend</name>
+        <label>延期单据</label>
+        <clazz>nccloud.web.ata.action.DocumentExtendAction</clazz>
+    </action>
+    <action>
+        <name>ata.document.close</name>
+        <label>关闭单证</label>
+        <clazz>nccloud.web.ata.action.DocumentCloseAction</clazz>
+    </action>
 
     <!-- 出库模块 -->
     <action>

@@ -22,6 +22,8 @@ public class DiffVO extends SuperVO {
 	public static final String DIFF_QTY = "diff_qty";
 	public static final String DIFF_TYPE = "diff_type";
 	public static final String DIFF_STATUS = "diff_status";
+	public static final String RETURN_DEADLINE = "return_deadline";
+	public static final String RETURN_REMINDED = "return_reminded";
 	public static final String HANDLER = "handler";
 	public static final String HANDLE_TIME = "handle_time";
 	public static final String HANDLE_REMARK = "handle_remark";
@@ -46,6 +48,8 @@ public class DiffVO extends SuperVO {
 	private UFDouble diff_qty;
 	private Integer diff_type;
 	private Integer diff_status;
+	private UFDate return_deadline;
+	private Integer return_reminded;
 	private String handler;
 	private UFDateTime handle_time;
 	private String handle_remark;
@@ -152,6 +156,22 @@ public class DiffVO extends SuperVO {
 
 	public void setDiff_status(Integer diff_status) {
 		this.diff_status = diff_status;
+	}
+
+	public UFDate getReturn_deadline() {
+		return return_deadline;
+	}
+
+	public void setReturn_deadline(UFDate return_deadline) {
+		this.return_deadline = return_deadline;
+	}
+
+	public Integer getReturn_reminded() {
+		return return_reminded;
+	}
+
+	public void setReturn_reminded(Integer return_reminded) {
+		this.return_reminded = return_reminded;
 	}
 
 	public String getHandler() {
@@ -267,7 +287,7 @@ public class DiffVO extends SuperVO {
 		entity.setPKFieldName(PK_DIFF);
 		entity.setName(this.getClass().getName());
 
-		PropertyMetaData[] props = new PropertyMetaData[23];
+		PropertyMetaData[] props = new PropertyMetaData[25];
 		props[0] = PropertyMetaDataFactory.createDefault(PK_DIFF, "主键", String.class.getName(), true);
 		props[1] = PropertyMetaDataFactory.createDefault(PK_EXHIBIT_LIST, "清单主键", String.class.getName(), false);
 		props[2] = PropertyMetaDataFactory.createDefault(PK_RETURN, "回运主键", String.class.getName(), false);
@@ -280,17 +300,19 @@ public class DiffVO extends SuperVO {
 		props[9] = PropertyMetaDataFactory.createDefault(DIFF_QTY, "差异数量", UFDouble.class.getName(), false);
 		props[10] = PropertyMetaDataFactory.createDefault(DIFF_TYPE, "差异类型", Integer.class.getName(), false);
 		props[11] = PropertyMetaDataFactory.createDefault(DIFF_STATUS, "处理状态", Integer.class.getName(), false);
-		props[12] = PropertyMetaDataFactory.createDefault(HANDLER, "处理人", String.class.getName(), false);
-		props[13] = PropertyMetaDataFactory.createDefault(HANDLE_TIME, "处理时间", UFDateTime.class.getName(), false);
-		props[14] = PropertyMetaDataFactory.createDefault(HANDLE_REMARK, "处理意见", String.class.getName(), false);
-		props[15] = PropertyMetaDataFactory.createDefault(PK_GROUP, "集团主键", String.class.getName(), false);
-		props[16] = PropertyMetaDataFactory.createDefault(PK_ORG, "组织主键", String.class.getName(), false);
-		props[17] = PropertyMetaDataFactory.createDefault(CREATOR, "创建人", String.class.getName(), false);
-		props[18] = PropertyMetaDataFactory.createDefault(CREATIONTIME, "创建时间", UFDateTime.class.getName(), false);
-		props[19] = PropertyMetaDataFactory.createDefault(MODIFIER, "修改人", String.class.getName(), false);
-		props[20] = PropertyMetaDataFactory.createDefault(MODIFIEDTIME, "修改时间", UFDateTime.class.getName(), false);
-		props[21] = PropertyMetaDataFactory.createDefault(DR, "删除标记", Integer.class.getName(), false);
-		props[22] = PropertyMetaDataFactory.createDefault(TS, "时间戳", UFDateTime.class.getName(), false);
+		props[12] = PropertyMetaDataFactory.createDefault(RETURN_DEADLINE, "回运期限", UFDate.class.getName(), false);
+		props[13] = PropertyMetaDataFactory.createDefault(RETURN_REMINDED, "是否已提醒", Integer.class.getName(), false);
+		props[14] = PropertyMetaDataFactory.createDefault(HANDLER, "处理人", String.class.getName(), false);
+		props[15] = PropertyMetaDataFactory.createDefault(HANDLE_TIME, "处理时间", UFDateTime.class.getName(), false);
+		props[16] = PropertyMetaDataFactory.createDefault(HANDLE_REMARK, "处理意见", String.class.getName(), false);
+		props[17] = PropertyMetaDataFactory.createDefault(PK_GROUP, "集团主键", String.class.getName(), false);
+		props[18] = PropertyMetaDataFactory.createDefault(PK_ORG, "组织主键", String.class.getName(), false);
+		props[19] = PropertyMetaDataFactory.createDefault(CREATOR, "创建人", String.class.getName(), false);
+		props[20] = PropertyMetaDataFactory.createDefault(CREATIONTIME, "创建时间", UFDateTime.class.getName(), false);
+		props[21] = PropertyMetaDataFactory.createDefault(MODIFIER, "修改人", String.class.getName(), false);
+		props[22] = PropertyMetaDataFactory.createDefault(MODIFIEDTIME, "修改时间", UFDateTime.class.getName(), false);
+		props[23] = PropertyMetaDataFactory.createDefault(DR, "删除标记", Integer.class.getName(), false);
+		props[24] = PropertyMetaDataFactory.createDefault(TS, "时间戳", UFDateTime.class.getName(), false);
 
 		entity.setProperties(props);
 		meta.addEntityMetaData(entity);

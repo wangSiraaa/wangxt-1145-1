@@ -19,6 +19,9 @@ public class DocumentVO extends SuperVO {
 	public static final String ISSUE_DATE = "issue_date";
 	public static final String GUARANTEE_AMOUNT = "guarantee_amount";
 	public static final String DOC_STATUS = "doc_status";
+	public static final String EXTEND_COUNT = "extend_count";
+	public static final String ORIGINAL_VALID_TO = "original_valid_to";
+	public static final String RETURN_DEADLINE_BASE = "return_deadline_base";
 	public static final String REVIEWER = "reviewer";
 	public static final String REVIEW_TIME = "review_time";
 	public static final String REVIEW_REMARK = "review_remark";
@@ -40,6 +43,9 @@ public class DocumentVO extends SuperVO {
 	private UFDate issue_date;
 	private UFDouble guarantee_amount;
 	private Integer doc_status;
+	private Integer extend_count;
+	private UFDate original_valid_to;
+	private Integer return_deadline_base;
 	private String reviewer;
 	private UFDateTime review_time;
 	private String review_remark;
@@ -122,6 +128,30 @@ public class DocumentVO extends SuperVO {
 
 	public void setDoc_status(Integer doc_status) {
 		this.doc_status = doc_status;
+	}
+
+	public Integer getExtend_count() {
+		return extend_count;
+	}
+
+	public void setExtend_count(Integer extend_count) {
+		this.extend_count = extend_count;
+	}
+
+	public UFDate getOriginal_valid_to() {
+		return original_valid_to;
+	}
+
+	public void setOriginal_valid_to(UFDate original_valid_to) {
+		this.original_valid_to = original_valid_to;
+	}
+
+	public Integer getReturn_deadline_base() {
+		return return_deadline_base;
+	}
+
+	public void setReturn_deadline_base(Integer return_deadline_base) {
+		this.return_deadline_base = return_deadline_base;
 	}
 
 	public String getReviewer() {
@@ -237,7 +267,7 @@ public class DocumentVO extends SuperVO {
 		entity.setPKFieldName(PK_DOCUMENT);
 		entity.setName(this.getClass().getName());
 
-		PropertyMetaData[] props = new PropertyMetaData[20];
+		PropertyMetaData[] props = new PropertyMetaData[23];
 		props[0] = PropertyMetaDataFactory.createDefault(PK_DOCUMENT, "主键", String.class.getName(), true);
 		props[1] = PropertyMetaDataFactory.createDefault(PK_EXHIBIT_LIST, "清单主键", String.class.getName(), false);
 		props[2] = PropertyMetaDataFactory.createDefault(DOCUMENT_NO, "ATA单证号", String.class.getName(), false);
@@ -247,17 +277,20 @@ public class DocumentVO extends SuperVO {
 		props[6] = PropertyMetaDataFactory.createDefault(ISSUE_DATE, "签发日期", UFDate.class.getName(), false);
 		props[7] = PropertyMetaDataFactory.createDefault(GUARANTEE_AMOUNT, "担保金额", UFDouble.class.getName(), false);
 		props[8] = PropertyMetaDataFactory.createDefault(DOC_STATUS, "单证状态", Integer.class.getName(), false);
-		props[9] = PropertyMetaDataFactory.createDefault(REVIEWER, "审核人", String.class.getName(), false);
-		props[10] = PropertyMetaDataFactory.createDefault(REVIEW_TIME, "审核时间", UFDateTime.class.getName(), false);
-		props[11] = PropertyMetaDataFactory.createDefault(REVIEW_REMARK, "审核意见", String.class.getName(), false);
-		props[12] = PropertyMetaDataFactory.createDefault(PK_GROUP, "集团主键", String.class.getName(), false);
-		props[13] = PropertyMetaDataFactory.createDefault(PK_ORG, "组织主键", String.class.getName(), false);
-		props[14] = PropertyMetaDataFactory.createDefault(CREATOR, "创建人", String.class.getName(), false);
-		props[15] = PropertyMetaDataFactory.createDefault(CREATIONTIME, "创建时间", UFDateTime.class.getName(), false);
-		props[16] = PropertyMetaDataFactory.createDefault(MODIFIER, "修改人", String.class.getName(), false);
-		props[17] = PropertyMetaDataFactory.createDefault(MODIFIEDTIME, "修改时间", UFDateTime.class.getName(), false);
-		props[18] = PropertyMetaDataFactory.createDefault(DR, "删除标记", Integer.class.getName(), false);
-		props[19] = PropertyMetaDataFactory.createDefault(TS, "时间戳", UFDateTime.class.getName(), false);
+		props[9] = PropertyMetaDataFactory.createDefault(EXTEND_COUNT, "延期次数", Integer.class.getName(), false);
+		props[10] = PropertyMetaDataFactory.createDefault(ORIGINAL_VALID_TO, "原始有效期止", UFDate.class.getName(), false);
+		props[11] = PropertyMetaDataFactory.createDefault(RETURN_DEADLINE_BASE, "基础回运期限(天)", Integer.class.getName(), false);
+		props[12] = PropertyMetaDataFactory.createDefault(REVIEWER, "审核人", String.class.getName(), false);
+		props[13] = PropertyMetaDataFactory.createDefault(REVIEW_TIME, "审核时间", UFDateTime.class.getName(), false);
+		props[14] = PropertyMetaDataFactory.createDefault(REVIEW_REMARK, "审核意见", String.class.getName(), false);
+		props[15] = PropertyMetaDataFactory.createDefault(PK_GROUP, "集团主键", String.class.getName(), false);
+		props[16] = PropertyMetaDataFactory.createDefault(PK_ORG, "组织主键", String.class.getName(), false);
+		props[17] = PropertyMetaDataFactory.createDefault(CREATOR, "创建人", String.class.getName(), false);
+		props[18] = PropertyMetaDataFactory.createDefault(CREATIONTIME, "创建时间", UFDateTime.class.getName(), false);
+		props[19] = PropertyMetaDataFactory.createDefault(MODIFIER, "修改人", String.class.getName(), false);
+		props[20] = PropertyMetaDataFactory.createDefault(MODIFIEDTIME, "修改时间", UFDateTime.class.getName(), false);
+		props[21] = PropertyMetaDataFactory.createDefault(DR, "删除标记", Integer.class.getName(), false);
+		props[22] = PropertyMetaDataFactory.createDefault(TS, "时间戳", UFDateTime.class.getName(), false);
 
 		entity.setProperties(props);
 		meta.addEntityMetaData(entity);

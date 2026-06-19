@@ -22,6 +22,10 @@ public class ExhibitVO extends SuperVO {
 	public static final String CURRENCY = "currency";
 	public static final String HS_CODE = "hs_code";
 	public static final String EXHIBIT_STATUS = "exhibit_status";
+	public static final String IS_CONTROLLED = "is_controlled";
+	public static final String CONTROL_LEVEL = "control_level";
+	public static final String SHIPPED_QTY = "shipped_qty";
+	public static final String VALUE_VERIFIED = "value_verified";
 	public static final String REMARK = "remark";
 	public static final String PK_GROUP = "pk_group";
 	public static final String PK_ORG = "pk_org";
@@ -44,6 +48,10 @@ public class ExhibitVO extends SuperVO {
 	private String currency;
 	private String hs_code;
 	private Integer exhibit_status;
+	private Integer is_controlled;
+	private String control_level;
+	private UFDouble shipped_qty;
+	private Integer value_verified;
 	private String remark;
 	private String pk_group;
 	private String pk_org;
@@ -150,6 +158,38 @@ public class ExhibitVO extends SuperVO {
 		this.exhibit_status = exhibit_status;
 	}
 
+	public Integer getIs_controlled() {
+		return is_controlled;
+	}
+
+	public void setIs_controlled(Integer is_controlled) {
+		this.is_controlled = is_controlled;
+	}
+
+	public String getControl_level() {
+		return control_level;
+	}
+
+	public void setControl_level(String control_level) {
+		this.control_level = control_level;
+	}
+
+	public UFDouble getShipped_qty() {
+		return shipped_qty;
+	}
+
+	public void setShipped_qty(UFDouble shipped_qty) {
+		this.shipped_qty = shipped_qty;
+	}
+
+	public Integer getValue_verified() {
+		return value_verified;
+	}
+
+	public void setValue_verified(Integer value_verified) {
+		this.value_verified = value_verified;
+	}
+
 	public String getRemark() {
 		return remark;
 	}
@@ -247,7 +287,7 @@ public class ExhibitVO extends SuperVO {
 		entity.setPKFieldName(PK_EXHIBIT);
 		entity.setName(this.getClass().getName());
 
-		PropertyMetaData[] props = new PropertyMetaData[21];
+		PropertyMetaData[] props = new PropertyMetaData[25];
 		props[0] = PropertyMetaDataFactory.createDefault(PK_EXHIBIT, "主键", String.class.getName(), true);
 		props[1] = PropertyMetaDataFactory.createDefault(PK_EXHIBIT_LIST, "清单主键", String.class.getName(), false);
 		props[2] = PropertyMetaDataFactory.createDefault(EXHIBIT_CODE, "展品编码", String.class.getName(), false);
@@ -260,15 +300,19 @@ public class ExhibitVO extends SuperVO {
 		props[9] = PropertyMetaDataFactory.createDefault(CURRENCY, "币种", String.class.getName(), false);
 		props[10] = PropertyMetaDataFactory.createDefault(HS_CODE, "HS编码", String.class.getName(), false);
 		props[11] = PropertyMetaDataFactory.createDefault(EXHIBIT_STATUS, "状态", Integer.class.getName(), false);
-		props[12] = PropertyMetaDataFactory.createDefault(REMARK, "备注", String.class.getName(), false);
-		props[13] = PropertyMetaDataFactory.createDefault(PK_GROUP, "集团主键", String.class.getName(), false);
-		props[14] = PropertyMetaDataFactory.createDefault(PK_ORG, "组织主键", String.class.getName(), false);
-		props[15] = PropertyMetaDataFactory.createDefault(CREATOR, "创建人", String.class.getName(), false);
-		props[16] = PropertyMetaDataFactory.createDefault(CREATIONTIME, "创建时间", UFDateTime.class.getName(), false);
-		props[17] = PropertyMetaDataFactory.createDefault(MODIFIER, "修改人", String.class.getName(), false);
-		props[18] = PropertyMetaDataFactory.createDefault(MODIFIEDTIME, "修改时间", UFDateTime.class.getName(), false);
-		props[19] = PropertyMetaDataFactory.createDefault(DR, "删除标记", Integer.class.getName(), false);
-		props[20] = PropertyMetaDataFactory.createDefault(TS, "时间戳", UFDateTime.class.getName(), false);
+		props[12] = PropertyMetaDataFactory.createDefault(IS_CONTROLLED, "是否管制品", Integer.class.getName(), false);
+		props[13] = PropertyMetaDataFactory.createDefault(CONTROL_LEVEL, "管制级别", String.class.getName(), false);
+		props[14] = PropertyMetaDataFactory.createDefault(SHIPPED_QTY, "累计已出运数量", UFDouble.class.getName(), false);
+		props[15] = PropertyMetaDataFactory.createDefault(VALUE_VERIFIED, "估值审核标记", Integer.class.getName(), false);
+		props[16] = PropertyMetaDataFactory.createDefault(REMARK, "备注", String.class.getName(), false);
+		props[17] = PropertyMetaDataFactory.createDefault(PK_GROUP, "集团主键", String.class.getName(), false);
+		props[18] = PropertyMetaDataFactory.createDefault(PK_ORG, "组织主键", String.class.getName(), false);
+		props[19] = PropertyMetaDataFactory.createDefault(CREATOR, "创建人", String.class.getName(), false);
+		props[20] = PropertyMetaDataFactory.createDefault(CREATIONTIME, "创建时间", UFDateTime.class.getName(), false);
+		props[21] = PropertyMetaDataFactory.createDefault(MODIFIER, "修改人", String.class.getName(), false);
+		props[22] = PropertyMetaDataFactory.createDefault(MODIFIEDTIME, "修改时间", UFDateTime.class.getName(), false);
+		props[23] = PropertyMetaDataFactory.createDefault(DR, "删除标记", Integer.class.getName(), false);
+		props[24] = PropertyMetaDataFactory.createDefault(TS, "时间戳", UFDateTime.class.getName(), false);
 
 		entity.setProperties(props);
 		meta.addEntityMetaData(entity);

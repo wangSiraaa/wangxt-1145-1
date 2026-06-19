@@ -217,7 +217,23 @@ public class ShipmentServiceImpl implements IShipmentService {
             if (sd.getSerial_verified() == null || sd.getSerial_verified() != 1) {
                 throw new BusinessException("展品[" + sd.getExhibit_name() + "]序列号未验证通过，不能出运");
             }
-            exhibit.setExhibit_status(1);
+            UFDouble shipmentQty = sd.getShipment_qty();
+            if (shipmentQty == null || shipmentQty.doubleValue() <= 0) {
+                throw new BusinessException("展品[" + sd.getExhibit_name() + "]出运数量必须大于0");
+            }
+            UFDouble totalQty = exhibit.getQuantity();
+            UFDouble shippedQty = exhibit.getShipped_qty() == null ? new UFDouble(0) : exhibit.getShipped_qty();
+            UFDouble remainQty = totalQty.subtract(shippedQty);
+            if (shipmentQty.doubleValue() > remainQty.doubleValue()) {
+                throw new BusinessException("展品[" + sd.getExhibit_name() + "]本次出运数量[" + shipmentQty + "]超过剩余可出运数量[" + remainQty + "]，总数量[" + totalQty + "]，已出运[" + shippedQty + "]");
+            }
+            UFDouble newShippedQty = shippedQty.add(shipmentQty);
+            exhibit.setShipped_qty(newShippedQty);
+            if (newShippedQty.doubleValue() >= totalQty.doubleValue()) {
+                exhibit.setExhibit_status(1);
+            } else {
+                exhibit.setExhibit_status(0);
+            }
             fillSysFieldsForExhibit(exhibit);
             exhibitsToUpdate.add(exhibit);
         }
@@ -262,7 +278,23 @@ public class ShipmentServiceImpl implements IShipmentService {
                 if (pkExhibit != null && pkExhibit.trim().length() > 0) {
                     ExhibitVO exhibit = queryExhibitByPk(pkExhibit);
                     if (exhibit != null) {
-                        exhibit.setExhibit_status(0);
+                        UFDouble shipmentQty = sd.getShipment_qty() == null ? new UFDouble(0) : sd.getShipment_qty();
+                        UFDouble shippedQty = exhibit.getShipped_qty() == null ? new UFDouble(0) : exhibit.getShipped_qty();
+                        UFDouble newShippedQty = shippedQty.subtract(shipmentQty);
+                        if (newShippedQty.doubleValue() < 0) {
+                            newShippedQty = new UFDouble(0);
+                        }
+                        exhibit.setShipped_qty(newShippedQty);
+                        if (newShippedQty.doubleValue() <= 0) {
+                            exhibit.setExhibit_status(0);
+                        } else {
+                            UFDouble totalQty = exhibit.getQuantity();
+                            if (newShippedQty.doubleValue() >= totalQty.doubleValue()) {
+                                exhibit.setExhibit_status(1);
+                            } else {
+                                exhibit.setExhibit_status(0);
+                            }
+                        }
                         fillSysFieldsForExhibit(exhibit);
                         exhibitsToUpdate.add(exhibit);
                     }

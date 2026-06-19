@@ -540,7 +540,7 @@ COMMENT ON COLUMN "ATA_DIFF"."TS"                IS '时间戳';
 --   SEQ_ATA_SHIPMENT_DETAIL, SEQ_ATA_RETURN, SEQ_ATA_RETURN_DETAIL, SEQ_ATA_DIFF
 --   起始值: 100000, 步长: 1
 --
--- 索引数量统计: 共计 34 个索引
+-- 索引数量统计: 共计 42 个索引（新增 8 个）
 --   UNIQUE索引:  6 个（list_code, exhibit_code, document_no, shipment_no, return_no, diff_no）
 --   外键索引:   13 个（所有外键字段）
 --   状态索引:    7 个（各表 *_status 字段，含 diff_type）
@@ -578,6 +578,7 @@ COMMENT ON COLUMN "ATA_DIFF"."TS"                IS '时间戳';
 --   1 = 通过
 --   2 = 需延期
 --   3 = 过期
+--   4 = 已关闭
 --
 -- 【出运状态 shipment_status】:
 --   0 = 待登记
@@ -629,6 +630,100 @@ COMMENT ON COLUMN "ATA_DIFF"."TS"                IS '时间戳';
 -- -- INSERT INTO "BD_ENUM" ("ENUM_TYPE", "ENUM_CODE", "ENUM_NAME", "SORT")
 -- -- VALUES ('ATA_LIST_STATUS', '4', '不通过', 5);
 --
+
+-- ===========================================================================================
+-- ================================ 功能增强: 新增字段 ALTER ================================
+-- ===========================================================================================
+
+-- ====== 1. ata_exhibit（展品明细表）新增字段 ======
+ALTER TABLE "ATA_EXHIBIT" ADD "IS_CONTROLLED"    NUMBER(2)      DEFAULT 0;
+COMMENT ON COLUMN "ATA_EXHIBIT"."IS_CONTROLLED" IS '管制品标识 0非管制品/1管制品';
+
+ALTER TABLE "ATA_EXHIBIT" ADD "CONTROL_LEVEL"    NVARCHAR2(50);
+COMMENT ON COLUMN "ATA_EXHIBIT"."CONTROL_LEVEL" IS '管制级别（HS编码匹配，如武器/爆炸物/药品/木材/贵金属等）';
+
+ALTER TABLE "ATA_EXHIBIT" ADD "SHIPPED_QTY"      NUMBER(28,8)   DEFAULT 0;
+COMMENT ON COLUMN "ATA_EXHIBIT"."SHIPPED_QTY" IS '累计已出运数量（拆分出运用，与quantity比较判断是否出运完毕）';
+
+ALTER TABLE "ATA_EXHIBIT" ADD "VALUE_VERIFIED"   NUMBER(2)      DEFAULT 0;
+COMMENT ON COLUMN "ATA_EXHIBIT"."VALUE_VERIFIED" IS '估值审核标记 0未审核/1已审核';
+
+-- ====== 2. ata_document（ATA单证表）新增字段 ======
+ALTER TABLE "ATA_DOCUMENT" ADD "EXTEND_COUNT"         NUMBER(5)    DEFAULT 0;
+COMMENT ON COLUMN "ATA_DOCUMENT"."EXTEND_COUNT" IS '延期次数';
+
+ALTER TABLE "ATA_DOCUMENT" ADD "ORIGINAL_VALID_TO"    DATE;
+COMMENT ON COLUMN "ATA_DOCUMENT"."ORIGINAL_VALID_TO" IS '原始有效期（首次签发时的valid_to，延期时保留原始值）';
+
+ALTER TABLE "ATA_DOCUMENT" ADD "RETURN_DEADLINE_BASE" NUMBER(5)    DEFAULT 180;
+COMMENT ON COLUMN "ATA_DOCUMENT"."RETURN_DEADLINE_BASE" IS '基础回运期限天数（默认180天，用于差异单return_deadline计算）';
+
+-- ====== 3. ata_diff（差异处理表）新增字段 ======
+ALTER TABLE "ATA_DIFF" ADD "RETURN_DEADLINE"   DATE;
+COMMENT ON COLUMN "ATA_DIFF"."RETURN_DEADLINE" IS '回运期限（=出运日期 + return_deadline_base，到期前提醒）';
+
+ALTER TABLE "ATA_DIFF" ADD "RETURN_REMINDED"   NUMBER(2)      DEFAULT 0;
+COMMENT ON COLUMN "ATA_DIFF"."RETURN_REMINDED" IS '是否已提醒 0未提醒/1已提醒';
+
+
+-- ===========================================================================================
+-- ================================== 功能增强: 新增索引 ====================================
+-- ===========================================================================================
+
+-- 展品明细表: 管制品快速查询
+CREATE INDEX "IDX_ATA_EXHIBIT_CONTROLLED"   ON "ATA_EXHIBIT" ("IS_CONTROLLED") TABLESPACE "USERS";
+
+-- 展品明细表: HS编码用于管制品匹配查询
+CREATE INDEX "IDX_ATA_EXHIBIT_HS_CODE"      ON "ATA_EXHIBIT" ("HS_CODE") TABLESPACE "USERS";
+
+-- 展品明细表: 序列号唯一性校验索引（清单内唯一）
+CREATE INDEX "IDX_ATA_EXHIBIT_SERIAL_LIST"  ON "ATA_EXHIBIT" ("PK_EXHIBIT_LIST", "SERIAL_NO") TABLESPACE "USERS";
+
+-- 展品明细表: 拆分出运查询（判断哪些展品还可继续出运）
+CREATE INDEX "IDX_ATA_EXHIBIT_SHIPPED"      ON "ATA_EXHIBIT" ("EXHIBIT_STATUS", "SHIPPED_QTY") TABLESPACE "USERS";
+
+-- 单证表: 延期次数统计查询
+CREATE INDEX "IDX_ATA_DOCUMENT_EXTEND_CNT"  ON "ATA_DOCUMENT" ("EXTEND_COUNT") TABLESPACE "USERS";
+
+-- 单证表: 原始有效期查询（审计用）
+CREATE INDEX "IDX_ATA_DOCUMENT_ORIG_VALID"  ON "ATA_DOCUMENT" ("ORIGINAL_VALID_TO") TABLESPACE "USERS";
+
+-- 差异表: 回运期限查询（到期提醒扫描用）
+CREATE INDEX "IDX_ATA_DIFF_RETURN_DDL"      ON "ATA_DIFF" ("RETURN_DEADLINE") TABLESPACE "USERS";
+
+-- 差异表: 提醒状态过滤（未提醒+期限内查询）
+CREATE INDEX "IDX_ATA_DIFF_REMINDED"        ON "ATA_DIFF" ("RETURN_REMINDED", "DIFF_STATUS") TABLESPACE "USERS";
+
+
+-- ===========================================================================================
+-- ============================== 新增枚举值说明（管制品管制级别）===========================
+-- ===========================================================================================
+--
+-- 【管制品标识 is_controlled】:
+--   0 = 非管制品（默认）
+--   1 = 管制品
+--
+-- 【管制级别 control_level】（基于HS编码前缀自动识别，命中时由系统写入）:
+--   武器          -> 93章
+--   爆炸物/烟火   -> 36章
+--   药品/兽药     -> 30章
+--   木材/木制品   -> 44章
+--   贵金属/包贵金属 -> 71章
+--   宝石/半宝石   -> 71章后段
+--   放射性物质     -> 2844, 2845品目
+--   医疗设备/仪器 -> 9018~9022品目
+--   半导体/电子元件 -> 8541, 8542品目
+--   其他管制      -> 其他命中的海关监管编码前缀
+--
+-- 【估值审核标记 value_verified】:
+--   0 = 未审核（默认）
+--   1 = 已审核
+--
+-- 【回运提醒标记 return_reminded】:
+--   0 = 未提醒（默认）
+--   1 = 已提醒
+--
+
 -- ===========================================================================================
 -- ================================== 脚本结束 ===============================================
 -- ===========================================================================================

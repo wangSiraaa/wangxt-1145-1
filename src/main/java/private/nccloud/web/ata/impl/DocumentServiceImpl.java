@@ -94,6 +94,15 @@ public class DocumentServiceImpl implements IDocumentService {
             if (parent.getDoc_status() == null) {
                 parent.setDoc_status(0);
             }
+            if (parent.getExtend_count() == null) {
+                parent.setExtend_count(0);
+            }
+            if (parent.getOriginal_valid_to() == null && parent.getValid_to() != null) {
+                parent.setOriginal_valid_to(parent.getValid_to());
+            }
+            if (parent.getReturn_deadline_base() == null) {
+                parent.setReturn_deadline_base(180);
+            }
         } else {
             DocumentVO old = queryHeadByPk(parent.getPk_document());
             if (old == null) {
@@ -148,8 +157,11 @@ public class DocumentServiceImpl implements IDocumentService {
         }
         UFDate validTo = dbHead.getValid_to();
         UFDate today = new UFDate();
+        boolean needExtend = false;
+        long remainDays = 0;
         if (validTo != null) {
             long diffDays = (validTo.getTime() - today.getTime()) / (24 * 60 * 60 * 1000);
+            remainDays = diffDays;
             if (diffDays < 0) {
                 dbHead.setDoc_status(3);
                 fillSysFields(dbHead, false);
@@ -158,17 +170,23 @@ public class DocumentServiceImpl implements IDocumentService {
                 } catch (Exception e) {
                     throw new BusinessException("更新状态失败：" + e.getMessage());
                 }
-                throw new BusinessException("单证已过期，不能审核");
+                throw new BusinessException("单证已过期，不能审核，请重新办理");
             } else if (diffDays < 30) {
-                dbHead.setDoc_status(2);
-                fillSysFields(dbHead, false);
-                try {
-                    getDao().updateVO(dbHead);
-                } catch (Exception e) {
-                    throw new BusinessException("更新状态失败：" + e.getMessage());
-                }
-                throw new BusinessException("单证有效期不足30天，请先办理延期");
+                needExtend = true;
             }
+        }
+        if (needExtend) {
+            dbHead.setDoc_status(2);
+            dbHead.setReviewer(getUserId());
+            dbHead.setReview_time(getNow());
+            dbHead.setReview_remark("单证有效期不足30天，剩余" + remainDays + "天，建议办理延期后再审核。如需强制审核请先发起延期操作。");
+            fillSysFields(dbHead, false);
+            try {
+                getDao().updateVO(dbHead);
+            } catch (Exception e) {
+                throw new BusinessException("更新状态失败：" + e.getMessage());
+            }
+            throw new BusinessException("单证有效期不足30天（剩余" + remainDays + "天），请发起延期后再审核，或联系系统管理员处理");
         }
         dbHead.setDoc_status(1);
         dbHead.setReviewer(getUserId());
@@ -242,6 +260,121 @@ public class DocumentServiceImpl implements IDocumentService {
             throw new BusinessException("更新状态失败：" + e.getMessage());
         }
         return queryByPk(doc.getPk_document());
+    }
+
+    @Override
+    public AggDocumentVO extend(String pkDocument, UFDate newValidTo, String extendRemark) throws BusinessException {
+        if (pkDocument == null || pkDocument.trim().length() == 0) {
+            throw new BusinessException("单证主键不能为空");
+        }
+        if (newValidTo == null) {
+            throw new BusinessException("新的有效期不能为空");
+        }
+        DocumentVO dbHead = queryHeadByPk(pkDocument);
+        if (dbHead == null) {
+            throw new BusinessException("单证不存在");
+        }
+        UFDate today = new UFDate();
+        if (newValidTo.before(today)) {
+            throw new BusinessException("新的有效期不能早于今天");
+        }
+        UFDate oldValidTo = dbHead.getValid_to();
+        if (oldValidTo != null && !newValidTo.after(oldValidTo)) {
+            throw new BusinessException("新的有效期必须晚于当前有效期");
+        }
+        Integer extendCount = dbHead.getExtend_count() == null ? 0 : dbHead.getExtend_count();
+        dbHead.setExtend_count(extendCount + 1);
+        if (dbHead.getOriginal_valid_to() == null && oldValidTo != null) {
+            dbHead.setOriginal_valid_to(oldValidTo);
+        }
+        dbHead.setValid_to(newValidTo);
+        dbHead.setDoc_status(0);
+        StringBuilder remark = new StringBuilder();
+        remark.append("第").append(extendCount + 1).append("次延期：原有效期").append(oldValidTo == null ? "未设置" : oldValidTo.toString());
+        remark.append(" → 新有效期").append(newValidTo.toString());
+        if (extendRemark != null && extendRemark.trim().length() > 0) {
+            remark.append("，备注：").append(extendRemark);
+        }
+        if (dbHead.getReview_remark() != null && dbHead.getReview_remark().trim().length() > 0) {
+            remark.append("；").append(dbHead.getReview_remark());
+        }
+        dbHead.setReview_remark(remark.toString());
+        dbHead.setReviewer(null);
+        dbHead.setReview_time(null);
+        fillSysFields(dbHead, false);
+        try {
+            getDao().updateVO(dbHead);
+        } catch (Exception e) {
+            throw new BusinessException("办理延期失败：" + e.getMessage());
+        }
+        return queryByPk(pkDocument);
+    }
+
+    @Override
+    public AggDocumentVO closeDocument(String pkDocument) throws BusinessException {
+        if (pkDocument == null || pkDocument.trim().length() == 0) {
+            throw new BusinessException("单证主键不能为空");
+        }
+        DocumentVO dbHead = queryHeadByPk(pkDocument);
+        if (dbHead == null) {
+            throw new BusinessException("单证不存在");
+        }
+        if (dbHead.getDoc_status() == null || dbHead.getDoc_status() != 1) {
+            throw new BusinessException("只有已审核通过的单证才能关闭");
+        }
+        String pkList = dbHead.getPk_exhibit_list();
+        if (pkList != null && pkList.trim().length() > 0) {
+            DiffVO[] pendingDiffs = queryPendingDiffsByListPk(pkList);
+            if (pendingDiffs != null && pendingDiffs.length > 0) {
+                StringBuilder sb = new StringBuilder();
+                for (DiffVO d : pendingDiffs) {
+                    sb.append("[").append(d.getDiff_no()).append(":").append(d.getExhibit_name()).append("]");
+                }
+                throw new BusinessException("清单下存在" + pendingDiffs.length + "件未处理完毕的差异：" + sb.toString() + "，请处理完毕后再关闭单证");
+            }
+            ReturnVO[] returns = queryReturnsByListPk(pkList);
+            if (returns == null || returns.length == 0) {
+                throw new BusinessException("该清单尚未登记任何回运记录，不能关闭单证");
+            }
+        }
+        dbHead.setDoc_status(4);
+        fillSysFields(dbHead, false);
+        try {
+            getDao().updateVO(dbHead);
+        } catch (Exception e) {
+            throw new BusinessException("关闭单证失败：" + e.getMessage());
+        }
+        return queryByPk(pkDocument);
+    }
+
+    private DiffVO[] queryPendingDiffsByListPk(String pkList) throws BusinessException {
+        String sql = "SELECT * FROM ata_diff WHERE pk_exhibit_list = ? AND dr = 0 AND diff_status < 3";
+        SQLParameter param = new SQLParameter();
+        param.addParam(pkList);
+        try {
+            List list = getDao().executeQuery(sql, param, new BeanListProcessor(DiffVO.class));
+            if (list == null || list.isEmpty()) {
+                return null;
+            }
+            return (DiffVO[]) list.toArray(new DiffVO[0]);
+        } catch (Exception e) {
+            throw new BusinessException("查询差异记录失败：" + e.getMessage());
+        }
+    }
+
+    private ReturnVO[] queryReturnsByListPk(String pkList) throws BusinessException {
+        String sql = "SELECT * FROM ata_return WHERE pk_exhibit_list = ? AND dr = 0 AND return_status = 1";
+        SQLParameter param = new SQLParameter();
+        param.addParam(pkList);
+        try {
+            List list = getDao().executeQuery(sql, param, new BeanListProcessor(ReturnVO.class));
+            if (list == null || list.isEmpty()) {
+                return null;
+            }
+            return (ReturnVO[]) list.toArray(new ReturnVO[0]);
+        } catch (Exception e) {
+            throw new BusinessException("查询回运记录失败：" + e.getMessage());
+        }
     }
 
     @Override

@@ -259,6 +259,12 @@ public class ReturnServiceImpl implements IReturnService {
         List<ExhibitVO> exhibitsToUpdate = new ArrayList<ExhibitVO>();
         boolean hasDiff = false;
         String pkList = dbHead.getPk_exhibit_list();
+        int returnDeadlineBase = 180;
+        DocumentVO doc = queryDocumentByListPk(pkList);
+        if (doc != null && doc.getReturn_deadline_base() != null) {
+            returnDeadlineBase = doc.getReturn_deadline_base();
+        }
+        UFDate shipmentDate = shipment.getShipment_date();
         for (ReturnDetailVO rd : details) {
             String pkExhibit = rd.getPk_exhibit();
             if (pkExhibit == null || pkExhibit.trim().length() == 0) {
@@ -299,8 +305,21 @@ public class ReturnServiceImpl implements IReturnService {
                 diff.setShipment_qty(shipmentQty);
                 diff.setReturn_qty(returnQty);
                 diff.setDiff_qty(diffQty);
-                diff.setDiff_type(5);
-                diff.setDiff_status(0);
+                UFDate returnDeadline = shipmentDate;
+                if (returnDeadline == null) {
+                    returnDeadline = new UFDate();
+                }
+                returnDeadline = returnDeadline.addDay(returnDeadlineBase);
+                diff.setReturn_deadline(returnDeadline);
+                diff.setReturn_reminded(0);
+                UFDate today = new UFDate();
+                if (today.after(returnDeadline)) {
+                    diff.setDiff_type(5);
+                    diff.setDiff_status(0);
+                } else {
+                    diff.setDiff_type(5);
+                    diff.setDiff_status(0);
+                }
                 fillSysFieldsForDiff(diff, true);
                 diffList.add(diff);
                 exhibit.setExhibit_status(3);
@@ -437,6 +456,24 @@ public class ReturnServiceImpl implements IReturnService {
             return (ExhibitVO) getDao().retrieveByPK(ExhibitVO.class, pk);
         } catch (Exception e) {
             throw new BusinessException("查询展品失败：" + e.getMessage());
+        }
+    }
+
+    private DocumentVO queryDocumentByListPk(String pkList) throws BusinessException {
+        if (pkList == null || pkList.trim().length() == 0) {
+            return null;
+        }
+        String sql = "SELECT * FROM ata_document WHERE pk_exhibit_list = ? AND dr = 0";
+        SQLParameter param = new SQLParameter();
+        param.addParam(pkList);
+        try {
+            List list = getDao().executeQuery(sql, param, new BeanListProcessor(DocumentVO.class));
+            if (list == null || list.isEmpty()) {
+                return null;
+            }
+            return (DocumentVO) list.get(0);
+        } catch (Exception e) {
+            throw new BusinessException("查询单证失败：" + e.getMessage());
         }
     }
 
